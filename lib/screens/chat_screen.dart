@@ -23,10 +23,14 @@ class _ChatScreenState extends State<ChatScreen> {
       _controller.clear();
     });
 
-    final apiKey = const String.fromEnvironment('OPENROUTER_API_KEY', defaultValue: '');
+    final apiKey =
+        const String.fromEnvironment('OPENROUTER_API_KEY', defaultValue: '');
     if (apiKey.isEmpty) {
       setState(() {
-        _msgs.add(_Msg(role: 'assistant', text: 'OpenRouter key missing. Add it as a GitHub secret named OPENROUTER_API_KEY.'));
+        _msgs.add(_Msg(
+            role: 'assistant',
+            text:
+                'OpenRouter key missing. Add a repo secret named OPENROUTER_API_KEY.'));
         _sending = false;
       });
       return;
@@ -42,22 +46,25 @@ class _ChatScreenState extends State<ChatScreen> {
         body: jsonEncode({
           "model": "openai/gpt-4o-mini",
           "messages": [
-            {"role": "system", "content": "You are Ava, a helpful fashion/lifestyle assistant."},
-            ..._msgs.map((m)=>{"role": m.role, "content": m.text}).toList(),
+            {"role": "system", "content": "You are Ava, a helpful fashion assistant."},
+            ..._msgs.map((m) => {"role": m.role, "content": m.text}),
           ],
         }),
       );
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
-        final reply = data['choices'][0]['message']['content'] as String? ?? '(empty)';
+        final reply =
+            data['choices'][0]['message']['content'] as String? ?? '(empty)';
         setState(() {
           _msgs.add(_Msg(role: 'assistant', text: reply));
           _sending = false;
         });
       } else {
         setState(() {
-          _msgs.add(_Msg(role: 'assistant', text: 'API error: ${resp.statusCode} ${resp.body}'));
+          _msgs.add(_Msg(
+              role: 'assistant',
+              text: 'API error: ${resp.statusCode} ${resp.body}'));
           _sending = false;
         });
       }
@@ -89,8 +96,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     padding: const EdgeInsets.all(12),
                     constraints: const BoxConstraints(maxWidth: 520),
                     decoration: BoxDecoration(
-                      color: isUser ? Theme.of(context).colorScheme.primaryContainer
-                                     : Theme.of(context).colorScheme.surfaceVariant,
+                      color: isUser
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Theme.of(context).colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(m.text),
@@ -119,8 +127,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.only(right: 12),
                   child: FilledButton(
                     onPressed: _sending ? null : _send,
-                    child: _sending ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                    : const Icon(Icons.send),
+                    child: _sending
+                        ? const SizedBox(
+                            height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.send),
                   ),
                 )
               ],
