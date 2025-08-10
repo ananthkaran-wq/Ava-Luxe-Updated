@@ -1,90 +1,88 @@
 import 'package:flutter/material.dart';
+import '../services/local_bot.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
-
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _controller = TextEditingController();
-  final _messages = <String>[];
+  final _bot = LocalBot();
+  final _c = TextEditingController();
+  final _messages = <_Msg>[];
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _send() {
-    final text = _controller.text.trim();
+  Future<void> _send() async {
+    final text = _c.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _messages.add(text);
-      _controller.clear();
+      _messages.add(_Msg(text, true));
+      _c.clear();
     });
-    // Later: call your AI endpoint and push the reply into _messages.
+    final r = await _bot.reply(text);
+    setState(() => _messages.add(_Msg(r, false)));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, i) {
-                final me = i.isEven;
-                final t = _messages[i];
-                return Align(
-                  alignment: me ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: me
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(t),
-                  ),
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
-              child: Row(
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: _messages.length,
+            itemBuilder: (_, i) {
+              final m = _messages[i];
+              final align = m.me ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+              final color  = m.me ? Theme.of(context).colorScheme.primary : Colors.grey.shade300;
+              final textColor = m.me ? Colors.white : Colors.black87;
+              return Column(
+                crossAxisAlignment: align,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message…',
-                        border: OutlineInputBorder(),
-                      ),
-                      onSubmitted: (_) => _send(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _send,
-                    icon: const Icon(Icons.send_rounded),
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(14)),
+                    child: Text(m.text, style: TextStyle(color: textColor)),
                   ),
                 ],
+              );
+            },
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _c,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _send(),
+                  decoration: const InputDecoration(
+                    hintText: 'Message Ava...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ),
-            ),
-          )
-        ],
-      ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: _send,
+                icon: const Icon(Icons.send),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+        ),
+      ],
     );
   }
+}
+
+class _Msg {
+  final String text;
+  final bool me;
+  _Msg(this.text, this.me);
 }
