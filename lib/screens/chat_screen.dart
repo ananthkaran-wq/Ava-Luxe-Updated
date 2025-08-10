@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../services/local_bot.dart';
+import 'package:http/http.dart' as http;
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -8,81 +9,131 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final _bot = LocalBot();
-  final _c = TextEditingController();
-  final _messages = <_Msg>[];
+  final _controller = TextEditingController();
+  final List<_Msg> _msgs = [];
+  bool _sending = false;
 
   Future<void> _send() async {
-    final text = _c.text.trim();
-    if (text.isEmpty) return;
+    final text = _controller.text.trim();
+    if (text.isEmpty || _sending) return;
+
     setState(() {
-      _messages.add(_Msg(text, true));
-      _c.clear();
+      _msgs.add(_Msg(role: 'user', text: text));
+      _sending = true;
+      _controller.clear();
     });
-    final r = await _bot.reply(text);
-    setState(() => _messages.add(_Msg(r, false)));
+
+    final apiKey = const String.fromEnvironment('OPENROUTER_API_KEY', defaultValue: '');
+    if (apiKey.isEmpty) {
+      setState(() {
+        _msgs.add(_Msg(role: 'assistant', text: 'OpenRouter key missing. Add it as a GitHub secret named OPENROUTER_API_KEY.'));
+        _sending = false;
+      });
+      return;
+    }
+
+    try {
+      final resp = await http.post(
+        Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          "model": "openai/gpt-4o-mini",
+          "messages": [
+            {"role": "system", "content": "You are Ava, a helpful fashion/lifestyle assistant."},
+            ..._msgs.map((m)=>{"role": m.role, "content": m.text}).toList(),
+          ],
+        }),
+      );
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        final reply = data['choices'][0]['message']['content'] as String? ?? '(empty)';
+        setState(() {
+          _msgs.add(_Msg(role: 'assistant', text: reply));
+          _sending = false;
+        });
+      } else {
+        setState(() {
+          _msgs.add(_Msg(role: 'assistant', text: 'API error: ${resp.statusCode} ${resp.body}'));
+          _sending = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _msgs.add(_Msg(role: 'assistant', text: 'Network error: $e'));
+        _sending = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: _messages.length,
-            itemBuilder: (_, i) {
-              final m = _messages[i];
-              final align = m.me ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-              final color  = m.me ? Theme.of(context).colorScheme.primary : Colors.grey.shade300;
-              final textColor = m.me ? Colors.white : Colors.black87;
-              return Column(
-                crossAxisAlignment: align,
-                children: [
-                  Container(
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chat')),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: _msgs.length,
+              itemBuilder: (c, i) {
+                final m = _msgs[i];
+                final isUser = m.role == 'user';
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    constraints: const BoxConstraints(maxWidth: 320),
-                    decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(14)),
-                    child: Text(m.text, style: TextStyle(color: textColor)),
+                    padding: const EdgeInsets.all(12),
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    decoration: BoxDecoration(
+                      color: isUser ? Theme.of(context).colorScheme.primaryContainer
+                                     : Theme.of(context).colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(m.text),
                   ),
-                ],
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
-        SafeArea(
-          top: false,
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _c,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _send(),
-                  decoration: const InputDecoration(
-                    hintText: 'Message Ava...',
-                    border: OutlineInputBorder(),
+          SafeArea(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: TextField(
+                      controller: _controller,
+                      onSubmitted: (_) => _send(),
+                      decoration: const InputDecoration(
+                        hintText: 'Ask Ava…',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: _send,
-                icon: const Icon(Icons.send),
-              ),
-              const SizedBox(width: 8),
-            ],
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: FilledButton(
+                    onPressed: _sending ? null : _send,
+                    child: _sending ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                    : const Icon(Icons.send),
+                  ),
+                )
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
 class _Msg {
+  final String role;
   final String text;
-  final bool me;
-  _Msg(this.text, this.me);
+  _Msg({required this.role, required this.text});
 }
