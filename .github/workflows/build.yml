@@ -26,14 +26,17 @@ jobs:
           channel: stable
           cache: true
 
-      # Create the Android platform in the runner workspace (repo name may have dashes)
-      - name: Create Android platform
-        run: flutter create . --platforms=android --project-name ava_luxe
+      # ✅ Create Android skeleton in a temp dir, then move ONLY the android/ folder
+      - name: Generate Android project (without touching lib/)
+        run: |
+          rm -rf android
+          flutter create --platforms=android --project-name ava_luxe android_skel
+          mv android_skel/android ./android
+          rm -rf android_skel
 
       - name: flutter pub get
         run: flutter pub get
 
-      # Build with all runtime secrets injected via --dart-define
       - name: Build release APK
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
