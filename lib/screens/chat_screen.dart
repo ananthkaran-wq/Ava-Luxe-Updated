@@ -28,9 +28,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (apiKey.isEmpty) {
       setState(() {
         _msgs.add(_Msg(
-            role: 'assistant',
-            text:
-                'OpenRouter key missing. Add a repo secret named OPENROUTER_API_KEY.'));
+          role: 'assistant',
+          text: 'OpenRouter key missing. Add repo secret OPENROUTER_API_KEY.',
+        ));
         _sending = false;
       });
       return;
@@ -42,6 +42,9 @@ class _ChatScreenState extends State<ChatScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $apiKey',
+          // 👇 Helps some org/workspace setups
+          'HTTP-Referer': 'https://github.com/ananthkaran-wq/Ava-Luxe-Updated',
+          'X-Title': 'Ava Luxe',
         },
         body: jsonEncode({
           "model": "openai/gpt-4o-mini",
@@ -64,7 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _msgs.add(_Msg(
               role: 'assistant',
-              text: 'API error: ${resp.statusCode} ${resp.body}'));
+              text: 'API error: ${resp.statusCode}\n${resp.body}'));
           _sending = false;
         });
       }
