@@ -1,63 +1,99 @@
 import 'package:flutter/material.dart';
 
-class Garment {
-  final IconData icon;
-  const Garment(this.icon);
+/// What the avatar wears on top.
+enum Top {
+  dress,
+  jacket,
+  shirt,
+  tee,
 }
 
-class Look {
-  final Garment top;
-  final Garment bottom;
-  final IconData icon;
-  const Look({required this.top, required this.bottom, required this.icon});
+/// What the avatar wears on the bottom.
+enum Bottom {
+  skirt,
+  jeans,
+  pants,
+  sneakers, // keep a fun option
 }
 
-/// Very small demo state for the wardrobe/avatar.
-class AvatarModel extends ChangeNotifier {
-  // Use icons that actually exist in Material Icons.
-  // (There is no Icons.dress or Icons.tshirt.)
-  final List<Look> _looks = const [
-    Look(
-      top: Garment(Icons.checkroom),     // clothing hanger
-      bottom: Garment(Icons.straighten), // measuring line
-      icon: Icons.checkroom,
-    ),
-    Look(
-      top: Garment(Icons.blender),       // just a fun placeholder
-      bottom: Garment(Icons.straighten),
-      icon: Icons.inventory_2,           // a simple box icon
-    ),
-    Look(
-      top: Garment(Icons.emoji_people),  // person silhouette
-      bottom: Garment(Icons.straighten),
-      icon: Icons.shopping_bag,          // bag icon
-    ),
-    Look(
-      top: Garment(Icons.checkroom),
-      bottom: Garment(Icons.straighten),
-      icon: Icons.checkroom,
-    ),
-    Look(
-      top: Garment(Icons.emoji_people),
-      bottom: Garment(Icons.straighten),
-      icon: Icons.shopping_bag,
-    ),
-    Look(
-      top: Garment(Icons.checkroom),
-      bottom: Garment(Icons.straighten),
-      icon: Icons.checkroom,
-    ),
-  ];
-
-  int _selectedIndex = 0;
-
-  List<Look> get looks => _looks;
-  int get selectedIndex => _selectedIndex;
-  Look get selectedLook => _looks[_selectedIndex];
-
-  void select(int index) {
-    if (index < 0 || index >= _looks.length) return;
-    _selectedIndex = index;
-    notifyListeners();
+/// Icons & labels for Tops
+extension TopX on Top {
+  IconData get icon {
+    switch (this) {
+      case Top.dress:  return Icons.checkroom;
+      case Top.jacket: return Icons.hiking;      // coat-ish
+      case Top.shirt:  return Icons.business;
+      case Top.tee:    return Icons.tshirt_crew; // if missing, fallback below
+    }
   }
+
+  String get label {
+    switch (this) {
+      case Top.dress:  return 'Dress';
+      case Top.jacket: return 'Jacket';
+      case Top.shirt:  return 'Shirt';
+      case Top.tee:    return 'T-Shirt';
+    }
+  }
+}
+
+/// Icons & labels for Bottoms
+extension BottomX on Bottom {
+  IconData get icon {
+    switch (this) {
+      case Bottom.skirt:   return Icons.skirt;   // if your SDK lacks this, swap to Icons.style
+      case Bottom.jeans:   return Icons.roller_skating; // playful stand-in
+      case Bottom.pants:   return Icons.boy;     // stand-in for trousers
+      case Bottom.sneakers:return Icons.directions_run;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case Bottom.skirt:    return 'Skirt';
+      case Bottom.jeans:    return 'Jeans';
+      case Bottom.pants:    return 'Pants';
+      case Bottom.sneakers: return 'Sneakers';
+    }
+  }
+}
+
+/// A preset "look" = a top + a bottom.
+class Look {
+  final Top top;
+  final Bottom bottom;
+  final String name;
+  const Look(this.top, this.bottom, this.name);
+}
+
+/// The avatar’s current outfit.
+class AvatarModel {
+  final Top top;
+  final Bottom bottom;
+
+  const AvatarModel({
+    required this.top,
+    required this.bottom,
+  });
+
+  AvatarModel copyWith({Top? top, Bottom? bottom}) =>
+      AvatarModel(top: top ?? this.top, bottom: bottom ?? this.bottom);
+
+  /// What the UI expects: a demo/default avatar.
+  static AvatarModel demo() =>
+      const AvatarModel(top: Top.shirt, bottom: Bottom.jeans);
+
+  /// Apply a preset look to this avatar (used in Wardrobe screen).
+  AvatarModel applyLook(Look look) =>
+      AvatarModel(top: look.top, bottom: look.bottom);
+
+  /// What the UI expects: a list of demo looks for the Wardrobe grid.
+  static const List<Look> demoLooks = [
+    Look(Top.dress,  Bottom.skirt,    'Look #1'),
+    Look(Top.jacket, Bottom.pants,    'Look #2'),
+    Look(Top.shirt,  Bottom.pants,    'Look #3'),
+    Look(Top.tee,    Bottom.jeans,    'Look #4'),
+    Look(Top.shirt,  Bottom.jeans,    'Look #5'),
+    Look(Top.tee,    Bottom.sneakers, 'Look #6'),
+  ];
 }
