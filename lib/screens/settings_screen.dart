@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/app_settings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../state/app_settings.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -9,35 +10,44 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.watch<AppSettings>();
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        SwitchListTile(
-          title: const Text('Dark mode'),
-          value: s.darkMode,
-          onChanged: (v) => s.setDarkMode(v),
-        ),
-        const SizedBox(height: 8),
-        ListTile(
-          title: const Text('Text size'),
-          subtitle: Text('${(s.textScale * 100).round()}%'),
-          trailing: SizedBox(
-            width: 180,
-            child: Slider(
-              value: s.textScale,
-              onChanged: (v) => s.setTextScale(v),
-              divisions: 6,
-              min: 0.8,
-              max: 1.4,
-              label: '${(s.textScale * 100).round()}%',
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          SwitchListTile(
+            value: s.darkMode,
+            onChanged: (v) => s.setDarkMode(v),
+            title: const Text('Dark mode'),
+          ),
+          ListTile(
+            title: const Text('Text size'),
+            subtitle: Text('${(s.textScale * 100).round()}%'),
+            trailing: SizedBox(
+              width: 200,
+              child: Slider(
+                value: s.textScale,
+                min: 0.8, max: 1.4, divisions: 6,
+                onChanged: (v) => s.setTextScale(double.parse(v.toStringAsFixed(2))),
+              ),
             ),
           ),
-        ),
-        const Divider(height: 32),
-        const Text('About', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text('Ava Luxe — sample app with Wardrobe, Chat, and Settings. Built via GitHub Actions.'),
-      ],
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Sign out'),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              // The AuthGate in main.dart will route back to SignInScreen automatically.
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Signed out')),
+                );
+              }
+            },
+          ),
+        ],
+      ),
     );
   }
 }
