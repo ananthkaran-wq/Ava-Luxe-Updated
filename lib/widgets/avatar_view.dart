@@ -1,38 +1,32 @@
 import 'package:flutter/material.dart';
-import '../state/avatar_model.dart';
+import 'package:ava_luxe/state/avatar_model.dart';
 
+/// Very simple avatar renderer that just shows two big icons:
+/// one for the top and one for the bottom.
 class AvatarView extends StatelessWidget {
   final AvatarModel avatar;
   final double size;
-  const AvatarView({super.key, required this.avatar, this.size = 200});
+  const AvatarView({super.key, required this.avatar, this.size = 160});
 
   @override
   Widget build(BuildContext context) {
-    // Very simple composed avatar (placeholders)
+    final s = size;
     return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
+      width: s,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-          ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: Icon(Icons.face_3, size: size * .45),
-          ),
-          Align(
+          // Top icon
+          Container(
+            height: s * .55,
             alignment: Alignment.center,
-            child: Icon(avatar.top.icon, size: size * .35),
+            child: Icon(avatar.top.icon, size: s * .5),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Icon(avatar.bottom.icon, size: size * .35),
+          // Bottom icon
+          Container(
+            height: s * .35,
+            alignment: Alignment.center,
+            child: Icon(avatar.bottom.icon, size: s * .35),
           ),
         ],
       ),
