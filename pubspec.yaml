@@ -1,5 +1,5 @@
 name: ava_luxe
-description: Minimal Flutter app built in GitHub Actions
+description: Ava Luxe MVP
 publish_to: "none"
 version: 1.0.0+1
 
@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # UI + features
+  webview_flutter: ^4.8.0
+  flutter_tts: ^3.8.5
+  share_plus: ^10.1.4
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
