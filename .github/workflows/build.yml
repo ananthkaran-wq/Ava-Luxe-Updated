@@ -11,15 +11,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter 3.22.2
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.2'
-          channel: 'stable'
+          channel: stable
           cache: true
 
       - name: Create Android platform
         run: flutter create . --platforms=android
+
+      - name: Accept Android licenses
+        run: yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Write google-services.json from secret
         env:
@@ -36,9 +45,9 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          # if you later want the key at compile time, add:
-          # --dart-define=OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
           flutter build apk --release
+          # If you ever need the key at compile time:
+          # flutter build apk --release --dart-define=OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
