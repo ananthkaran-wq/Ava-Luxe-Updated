@@ -1,31 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class AppSettings extends ChangeNotifier {
-  bool _darkMode = false;
-  double _textScale = 1.0;
+  bool notifications = true;
+  bool darkMode = false;
+  int? selectedLook; // 0..3
 
-  bool get darkMode => _darkMode;
-  double get textScale => _textScale;
-
-  Future<void> load() async {
-    final p = await SharedPreferences.getInstance();
-    _darkMode = p.getBool('darkMode') ?? false;
-    _textScale = p.getDouble('textScale') ?? 1.0;
+  void toggleNotifications(bool v) {
+    notifications = v;
     notifyListeners();
   }
 
-  Future<void> setDarkMode(bool v) async {
-    _darkMode = v;
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('darkMode', v);
+  void toggleDarkMode(bool v) {
+    darkMode = v;
     notifyListeners();
   }
 
-  Future<void> setTextScale(double v) async {
-    _textScale = v;
-    final p = await SharedPreferences.getInstance();
-    await p.setDouble('textScale', v);
+  void selectLook(int i) {
+    selectedLook = i;
     notifyListeners();
   }
 }
