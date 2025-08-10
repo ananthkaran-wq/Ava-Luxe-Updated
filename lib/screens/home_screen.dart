@@ -11,11 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
-  final _pages = const [
-    ChatScreen(),
-    WardrobeScreen(),
-    SettingsScreen(),
-  ];
+  final _pages = const [ChatScreen(), WardrobeScreen(), SettingsScreen()];
 
   @override
   Widget build(BuildContext context) {
