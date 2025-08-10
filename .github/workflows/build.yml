@@ -26,19 +26,26 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Android platform (ava_luxe)
+      - name: Create Android platform (in runner)
         run: flutter create . --platforms=android --project-name ava_luxe
 
-      # 🔧 Add Internet permission so HTTP works in release builds
-      - name: Patch AndroidManifest (INTERNET permission)
+      # 🔧 Ensure INTERNET permission is present in the generated manifest
+      - name: Add INTERNET permission to Manifest
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
           echo "Patching $MANIFEST"
-          # Insert the permission line right BEFORE the first <application> tag,
-          # without dropping the rest of the file.
-          sed -i '0,/<application>/{s//    <uses-permission android:name="android.permission.INTERNET"\/>\n&/}' "$MANIFEST"
+          if ! grep -q 'android.permission.INTERNET' "$MANIFEST"; then
+            # insert right after the opening <manifest ...> line
+            awk '{
+              print $0
+              if ($0 ~ /<manifest/) {
+                print "    <uses-permission android:name=\"android.permission.INTERNET\" />"
+              }
+            }' "$MANIFEST" > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
+          fi
+          echo "Done."
 
-      - name: Pub get
+      - name: flutter pub get
         run: flutter pub get
 
       - name: Build release APK
