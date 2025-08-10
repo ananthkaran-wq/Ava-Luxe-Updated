@@ -5,27 +5,43 @@ class WardrobeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = List.generate(12, (i) => 'Look #${i + 1}');
+    final items = List.generate(12, (i) => _Look(
+      title: 'Look #${i + 1}',
+      emoji: ['👗','🧥','👔','👚','👖','👟','🧣','👜','🕶️','💄','⌚','🧢'][i % 12],
+    ));
+
     return Scaffold(
       appBar: AppBar(title: const Text('Wardrobe')),
       body: GridView.builder(
         padding: const EdgeInsets.all(12),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.9),
+          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: .9),
         itemCount: items.length,
-        itemBuilder: (c, i) => Card(
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () {},
-            child: Column(
-              children: [
-                Expanded(child: Container(color: Theme.of(context).colorScheme.surfaceVariant)),
-                Padding(padding: const EdgeInsets.all(8), child: Text(items[i])),
-              ],
+        itemBuilder: (c, i) {
+          final look = items[i];
+          return Card(
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => ScaffoldMessenger.of(c)
+                  .showSnackBar(SnackBar(content: Text('Selected ${look.title}'))),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(look.emoji, style: const TextStyle(fontSize: 56)),
+                  const SizedBox(height: 8),
+                  Text(look.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
+}
+
+class _Look {
+  final String title;
+  final String emoji;
+  _Look({required this.title, required this.emoji});
 }
