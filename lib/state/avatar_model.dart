@@ -1,20 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class AvatarModel extends ChangeNotifier {
-  String _name = 'Ava';
-  String get name => _name;
+class Garment {
+  final IconData icon;
+  const Garment(this.icon);
+}
 
-  Future<void> load() async {
-    final p = await SharedPreferences.getInstance();
-    _name = p.getString('avatarName') ?? 'Ava';
-    notifyListeners();
-  }
+class Look {
+  final Garment top;
+  final Garment bottom;
+  final IconData icon;
+  const Look({required this.top, required this.bottom, required this.icon});
+}
 
-  Future<void> setName(String v) async {
-    _name = v;
-    final p = await SharedPreferences.getInstance();
-    await p.setString('avatarName', v);
-    notifyListeners();
-  }
+class AvatarModel {
+  final Garment top;
+  final Garment bottom;
+  const AvatarModel({required this.top, required this.bottom});
+
+  AvatarModel applyLook(Look l) => AvatarModel(top: l.top, bottom: l.bottom);
+
+  static AvatarModel demo() => const AvatarModel(
+        top: Garment(Icons.emoji_people),
+        bottom: Garment(Icons.straighten),
+      );
+
+  static const demoLooks = <Look>[
+    Look(top: Garment(Icons.dress), bottom: Garment(Icons.straighten), icon: Icons.dress),
+    Look(top: Garment(Icons.blender), bottom: Garment(Icons.straighten), icon: Icons.coat_check),
+    Look(top: Garment(Icons.checkroom), bottom: Garment(Icons.straighten), icon: Icons.checkroom),
+    Look(top: Garment(Icons.roller_skating), bottom: Garment(Icons.straighten), icon: Icons.roller_skating),
+    Look(top: Garment(Icons.tshirt), bottom: Garment(Icons.straighten), icon: Icons.tshirt),
+    Look(top: Garment(Icons.sports_martial_arts), bottom: Garment(Icons.straighten), icon: Icons.sports_martial_arts),
+  ];
 }
