@@ -1,14 +1,17 @@
 name: ava_luxe
-description: Ava Luxe — CI build
+description: Ava Luxe – style, avatars, and chat shell app
 publish_to: "none"
+version: 0.1.0+1
 
 environment:
-  sdk: ">=3.3.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  webview_flutter: ^4.7.0
 
 dev_dependencies:
   flutter_test:
