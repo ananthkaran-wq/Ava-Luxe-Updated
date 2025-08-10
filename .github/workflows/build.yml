@@ -47,7 +47,8 @@ jobs:
         run: flutter pub get
 
       - name: Accept Android licenses
-        run: yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses
+        run: |
+          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --sdk_root="${ANDROID_SDK_ROOT}" --licenses
 
       # Build a single universal release APK.
       # (If you prefer split-per-abi, replace the command with:
