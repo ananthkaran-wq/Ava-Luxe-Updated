@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
+import '../state/avatar_model.dart';
+import '../widgets/avatar_view.dart';
 
 class WardrobeScreen extends StatelessWidget {
   const WardrobeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final items = List.generate(12, (i) => _Look(
-      title: 'Look #${i + 1}',
-      emoji: ['👗','🧥','👔','👚','👖','👟','🧣','👜','🕶️','💄','⌚','🧢'][i % 12],
-    ));
-
+    final items = AvatarModel.demoLooks;
     return Scaffold(
       appBar: AppBar(title: const Text('Wardrobe')),
       body: GridView.builder(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: .9),
         itemCount: items.length,
@@ -22,14 +20,22 @@ class WardrobeScreen extends StatelessWidget {
           return Card(
             clipBehavior: Clip.antiAlias,
             child: InkWell(
-              onTap: () => ScaffoldMessenger.of(c)
-                  .showSnackBar(SnackBar(content: Text('Selected ${look.title}'))),
+              onTap: () {
+                final avatar = AvatarModel.demo().applyLook(look);
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => Scaffold(
+                    appBar: AppBar(title: Text('Look #${i + 1}')),
+                    body: Center(child: AvatarView(avatar: avatar, size: 260)),
+                  ),
+                ));
+              },
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(look.emoji, style: const TextStyle(fontSize: 56)),
-                  const SizedBox(height: 8),
-                  Text(look.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Expanded(child: Center(child: Icon(look.icon, size: 96))),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text('Look #${i + 1}'),
+                  ),
                 ],
               ),
             ),
@@ -38,10 +44,4 @@ class WardrobeScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Look {
-  final String title;
-  final String emoji;
-  _Look({required this.title, required this.emoji});
 }
