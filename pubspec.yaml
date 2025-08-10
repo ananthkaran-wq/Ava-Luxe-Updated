@@ -1,19 +1,14 @@
 name: ava_luxe
-description: Ava Luxe MVP
+description: Ava Luxe — CI build
 publish_to: "none"
-version: 1.0.0+1
 
 environment:
-  sdk: ">=3.4.0 <4.0.0"
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  # UI + features
-  webview_flutter: ^4.8.0
-  flutter_tts: ^3.8.5
-  share_plus: ^10.1.4
-  shared_preferences: ^2.3.3
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
