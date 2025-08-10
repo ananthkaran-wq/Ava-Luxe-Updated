@@ -1,5 +1,5 @@
+import 'dart:async'; // <-- needed for TimeoutException
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,6 +7,12 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
   @override
   State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _Msg {
+  final String role;
+  final String text;
+  _Msg({required this.role, required this.text});
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -20,62 +26,80 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       _msgs.add(_Msg(role: 'user', text: text));
-      _controller.clear();
       _sending = true;
+      _controller.clear();
     });
 
     final apiKey = const String.fromEnvironment('OPENROUTER_API_KEY', defaultValue: '');
     if (apiKey.isEmpty) {
-      _done("OpenRouter key missing. Add a secret OPENROUTER_API_KEY and rebuild.");
+      setState(() {
+        _msgs.add(_Msg(
+          role: 'assistant',
+          text:
+              'OpenRouter key missing. Add it as a GitHub secret named OPENROUTER_API_KEY.',
+        ));
+        _sending = false;
+      });
       return;
     }
 
-    try {
+    // Try the api subdomain first (some carriers/DNS block the apex).
+    const endpoints = <String>[
+      'https://api.openrouter.ai/v1/chat/completions',
+      'https://openrouter.ai/api/v1/chat/completions',
+    ];
+
+    Future<String> callEndpoint(String url) async {
       final resp = await http
           .post(
-            Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+            Uri.parse(url),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $apiKey',
-              // OpenRouter recommends these:
-              'HTTP-Referer': 'https://github.com/ananthkaran-wq/Ava-Luxe-Updated',
-              'X-Title': 'Ava Luxe',
             },
             body: jsonEncode({
               "model": "openai/gpt-4o-mini",
               "messages": [
-                {"role": "system", "content": "You are Ava, a friendly fashion assistant."},
+                {"role": "system", "content": "You are Ava, a helpful fashion/lifestyle assistant."},
                 ..._msgs.map((m) => {"role": m.role, "content": m.text}),
               ],
             }),
           )
-          .timeout(const Duration(seconds: 30));
-
-      if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        final reply = data['choices'][0]['message']['content'] as String? ?? '(empty)';
-        _done(reply);
-      } else {
-        _done('API error: ${resp.statusCode}\n${resp.body}');
+          .timeout(const Duration(seconds: 20));
+      if (resp.statusCode != 200) {
+        throw Exception('HTTP ${resp.statusCode}: ${resp.body}');
       }
-    } on SocketException catch (e) {
-      _done('No network/DNS. Make sure INTERNET permission is in manifest.\n$e');
-    } on HttpException catch (e) {
-      _done('HTTP error: $e');
-    } on FormatException catch (e) {
-      _done('Response format error: $e');
-    } on TimeoutException {
-      _done('Request timed out. Try again.');
-    } catch (e) {
-      _done('Unexpected error: $e');
+      final data = jsonDecode(resp.body);
+      return (data['choices'][0]['message']['content'] as String?) ?? '(empty)';
     }
-  }
 
-  void _done(String text) {
-    setState(() {
-      _msgs.add(_Msg(role: 'assistant', text: text));
-      _sending = false;
-    });
+    try {
+      String reply;
+      try {
+        reply = await callEndpoint(endpoints[0]);
+      } on TimeoutException catch (_) {
+        // quick retry on the same endpoint if just timing out
+        reply = await callEndpoint(endpoints[0]);
+      } on Exception {
+        // DNS/host issues? fall back to apex domain
+        reply = await callEndpoint(endpoints[1]);
+      }
+
+      setState(() {
+        _msgs.add(_Msg(role: 'assistant', text: reply));
+        _sending = false;
+      });
+    } on TimeoutException {
+      setState(() {
+        _msgs.add(_Msg(role: 'assistant', text: 'Network timeout — please try again.'));
+        _sending = false;
+      });
+    } on Exception catch (e) {
+      setState(() {
+        _msgs.add(_Msg(role: 'assistant', text: 'Network error: $e'));
+        _sending = false;
+      });
+    }
   }
 
   @override
@@ -130,10 +154,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: FilledButton(
                     onPressed: _sending ? null : _send,
                     child: _sending
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.send),
                   ),
-                ),
+                )
               ],
             ),
           ),
@@ -141,10 +169,4 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-}
-
-class _Msg {
-  final String role;
-  final String text;
-  _Msg({required this.role, required this.text});
 }
