@@ -1,49 +1,55 @@
 import 'package:flutter/material.dart';
-import 'package:ava_luxe/state/avatar_model.dart';
+import 'package:provider/provider.dart';
+import '../state/app_settings.dart';
 
 class WardrobeScreen extends StatelessWidget {
   const WardrobeScreen({super.key});
 
+  static const _looks = [
+    ('Casual Tee + Jeans', Icons.emoji_people),
+    ('Smart Shirt + Chinos', Icons.workspace_premium_outlined),
+    ('Jacket + Jeans', Icons.hiking),
+    ('Tee + Skirt', Icons.style_outlined),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final items = sampleLooks;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Wardrobe')),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(12),
+    final settings = context.watch<AppSettings>();
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: GridView.builder(
+        itemCount: _looks.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.9),
-        itemCount: items.length,
+          crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.0),
         itemBuilder: (c, i) {
-          final look = items[i];
+          final (title, icon) = _looks[i];
+          final selected = settings.selectedLook == i;
+
           return Card(
-            clipBehavior: Clip.antiAlias,
+            elevation: selected ? 2 : 0,
+            shape: RoundedRectangleBorder(
+              side: selected ? BorderSide(
+                color: Theme.of(context).colorScheme.primary, width: 2) : BorderSide.none,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: InkWell(
-              onTap: () {},
+              onTap: () {
+                context.read<AppSettings>().selectLook(i);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Selected "$title"')),
+                );
+              },
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Center(child: Icon(look.iconData, size: 96)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(look.topIcon, size: 18),
-                        const SizedBox(width: 6),
-                        Icon(look.bottomIcon, size: 18),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      look.label,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
+                  Icon(icon, size: 64),
+                  const SizedBox(height: 12),
+                  Text(title, textAlign: TextAlign.center),
+                  if (selected) ...[
+                    const SizedBox(height: 8),
+                    const Icon(Icons.check_circle, size: 20),
+                  ],
                 ],
               ),
             ),
