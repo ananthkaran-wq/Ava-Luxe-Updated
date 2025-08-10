@@ -2,9 +2,6 @@ name: Build Android APK (Flutter)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-  pull_request:
 
 jobs:
   build-android:
@@ -14,41 +11,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Setup Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
-          flutter-version: "3.22.2"
+          flutter-version: '3.22.2'
+          channel: 'stable'
+          cache: true
 
-      - name: Flutter pub get
+      - name: Create Android platform
+        run: flutter create . --platforms=android
+
+      - name: Write google-services.json from secret
+        env:
+          FIREBASE_ANDROID_JSON: ${{ secrets.FIREBASE_ANDROID_JSON }}
+        run: |
+          mkdir -p android/app
+          printf '%s' "$FIREBASE_ANDROID_JSON" > android/app/google-services.json
+          echo "google-services.json written to android/app/"
+
+      - name: flutter pub get
         run: flutter pub get
 
-      # If android/ is missing, create it (keeps Gradle versions sane)
-      - name: Ensure Android folder exists
-        run: |
-          if [ ! -d "android" ]; then
-            flutter create . --platforms=android
-          fi
-
-      # Make sure AndroidX switches are on (safe if already present)
-      - name: Ensure AndroidX
-        run: |
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-
-      # If you put google-services.json in android/app/, this step is not needed.
-      # Just make sure the file is committed.
       - name: Build release APK
-        run: flutter build apk --release --dart-define=OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          # if you later want the key at compile time, add:
+          # --dart-define=OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+          flutter build apk --release
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: avaluxe-release-apk
+          name: ava-luxe-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
