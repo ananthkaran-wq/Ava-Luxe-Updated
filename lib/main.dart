@@ -5,13 +5,15 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 const String appTitle = 'Ava Luxe';
-const String appShareText = 'Check out the Ava Luxe app!';
 const String prefDarkMode = 'pref_dark_mode';
 
-// TODO: put your site here (https://...).
+// Change to your website if you want:
 const String appUrl = 'https://flutter.dev';
 
-void main() => runApp(const AvaLuxeApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const AvaLuxeApp());
+}
 
 class AvaLuxeApp extends StatefulWidget {
   const AvaLuxeApp({super.key});
@@ -21,7 +23,7 @@ class AvaLuxeApp extends StatefulWidget {
 
 class _AvaLuxeAppState extends State<AvaLuxeApp> {
   bool _dark = false;
-  bool _loadingPrefs = true;
+  bool _loading = true;
 
   @override
   void initState() {
@@ -33,7 +35,7 @@ class _AvaLuxeAppState extends State<AvaLuxeApp> {
     final sp = await SharedPreferences.getInstance();
     setState(() {
       _dark = sp.getBool(prefDarkMode) ?? false;
-      _loadingPrefs = false;
+      _loading = false;
     });
   }
 
@@ -45,7 +47,7 @@ class _AvaLuxeAppState extends State<AvaLuxeApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loadingPrefs) {
+    if (_loading) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -55,54 +57,32 @@ class _AvaLuxeAppState extends State<AvaLuxeApp> {
       title: appTitle,
       debugShowCheckedModeBanner: false,
       themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.deepPurple,
-        useMaterial3: true,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.deepPurple,
-        useMaterial3: true,
-        brightness: Brightness.dark,
-      ),
-      home: MainScaffold(
-        onShare: () => Share.share(appShareText),
-        onToggleTheme: _toggleTheme,
-        dark: _dark,
-      ),
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.deepPurple),
+      darkTheme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.deepPurple, brightness: Brightness.dark),
+      home: HomeShell(onToggleTheme: _toggleTheme, dark: _dark),
     );
   }
 }
 
-class MainScaffold extends StatefulWidget {
-  final VoidCallback onShare;
+class HomeShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool dark;
-
-  const MainScaffold({
-    super.key,
-    required this.onShare,
-    required this.onToggleTheme,
-    required this.dark,
-  });
+  const HomeShell({super.key, required this.onToggleTheme, required this.dark});
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  State<HomeShell> createState() => _HomeShellState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      const HomeTab(),
-      const WebTab(),
-      const VoiceTab(),
-      SettingsTab(
-        dark: widget.dark,
-        onToggleTheme: widget.onToggleTheme,
-      ),
+      const _Welcome(),
+      const _WebTab(),
+      const _VoiceTab(),
+      _Settings(dark: widget.dark, onToggleTheme: widget.onToggleTheme),
     ];
 
     return Scaffold(
@@ -112,7 +92,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           IconButton(
             tooltip: 'Share',
             icon: const Icon(Icons.share),
-            onPressed: widget.onShare,
+            onPressed: () => Share.share('Check out the Ava Luxe app!'),
           ),
         ],
       ),
@@ -131,35 +111,38 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 }
 
-class HomeTab extends StatelessWidget {
-  const HomeTab({super.key});
+class _Welcome extends StatelessWidget {
+  const _Welcome();
+
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Column(mainAxisSize: MainAxisSize.min, children: const [
         Icon(Icons.spa, size: 72),
-        SizedBox(height: 16),
+        SizedBox(height: 12),
         Text('Welcome to Ava Luxe', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-        SizedBox(height: 8),
-        Text('Use the tabs below to browse, speak, and tweak settings.', textAlign: TextAlign.center),
+        SizedBox(height: 6),
+        Text('Use Web, Voice, and Settings tabs below.', textAlign: TextAlign.center),
       ]),
     );
   }
 }
 
-class WebTab extends StatefulWidget {
-  const WebTab({super.key});
+class _WebTab extends StatefulWidget {
+  const _WebTab();
+
   @override
-  State<WebTab> createState() => _WebTabState();
+  State<_WebTab> createState() => _WebTabState();
 }
 
-class _WebTabState extends State<WebTab> {
+class _WebTabState extends State<_WebTab> {
   late final WebViewController _controller;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
+    // API for webview_flutter 4.x
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -177,23 +160,21 @@ class _WebTabState extends State<WebTab> {
       WebViewWidget(controller: _controller),
       if (_loading)
         const Positioned.fill(
-          child: ColoredBox(
-            color: Colors.transparent,
-            child: Center(child: CircularProgressIndicator()),
-          ),
+          child: Center(child: CircularProgressIndicator()),
         ),
     ]);
   }
 }
 
-class VoiceTab extends StatefulWidget {
-  const VoiceTab({super.key});
+class _VoiceTab extends StatefulWidget {
+  const _VoiceTab();
+
   @override
-  State<VoiceTab> createState() => _VoiceTabState();
+  State<_VoiceTab> createState() => _VoiceTabState();
 }
 
-class _VoiceTabState extends State<VoiceTab> {
-  final _controller = TextEditingController(text: 'Hello from Ava Luxe!');
+class _VoiceTabState extends State<_VoiceTab> {
+  final _text = TextEditingController(text: 'Hello from Ava Luxe!');
   final _tts = FlutterTts();
   bool _speaking = false;
 
@@ -201,11 +182,8 @@ class _VoiceTabState extends State<VoiceTab> {
     await _tts.setLanguage('en-US');
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
-    await _tts.speak(_controller.text);
     setState(() => _speaking = true);
-    _tts.setCompletionHandler(() => setState(() => _speaking = false));
-    _tts.setCancelHandler(() => setState(() => _speaking = false));
-    _tts.setErrorHandler((_) => setState(() => _speaking = false));
+    await _tts.speak(_text.text);
   }
 
   Future<void> _stop() async {
@@ -215,7 +193,7 @@ class _VoiceTabState extends State<VoiceTab> {
 
   @override
   void dispose() {
-    _controller.dispose();
+    _text.dispose();
     _tts.stop();
     super.dispose();
   }
@@ -225,52 +203,34 @@ class _VoiceTabState extends State<VoiceTab> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('Say something', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        const Text('Say something', style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextField(
-          controller: _controller,
+          controller: _text,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Type text to speak…',
-          ),
+          decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Type text to speak…'),
         ),
         const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: _speaking ? null : _speak,
-          icon: const Icon(Icons.play_arrow),
-          label: const Text('Speak'),
-        ),
+        FilledButton.icon(onPressed: _speaking ? null : _speak, icon: const Icon(Icons.play_arrow), label: const Text('Speak')),
         const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: _speaking ? _stop : null,
-          icon: const Icon(Icons.stop),
-          label: const Text('Stop'),
-        ),
+        OutlinedButton.icon(onPressed: _speaking ? _stop : null, icon: const Icon(Icons.stop), label: const Text('Stop')),
       ]),
     );
   }
 }
 
-class SettingsTab extends StatelessWidget {
+class _Settings extends StatelessWidget {
   final bool dark;
   final VoidCallback onToggleTheme;
-  const SettingsTab({super.key, required this.dark, required this.onToggleTheme});
+  const _Settings({required this.dark, required this.onToggleTheme});
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        SwitchListTile(
-          title: const Text('Dark mode'),
-          value: dark,
-          onChanged: (_) => onToggleTheme(),
-        ),
-        const ListTile(
-          title: Text('Version'),
-          subtitle: Text('1.0.0'),
-        ),
+        SwitchListTile(title: const Text('Dark mode'), value: dark, onChanged: (_) => onToggleTheme()),
+        const ListTile(title: Text('Version'), subtitle: Text('1.0.0')),
       ],
     );
   }
