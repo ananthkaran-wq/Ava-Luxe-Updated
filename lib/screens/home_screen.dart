@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'chat_screen.dart';
 import 'wardrobe_screen.dart';
 import 'settings_screen.dart';
@@ -12,15 +13,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
+
   final _pages = const [
     ChatScreen(),
     WardrobeScreen(),
     SettingsScreen(),
   ];
 
+  final _labels = const ['Chat', 'Wardrobe', 'Settings'];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text(_labels[_index])),
       body: _pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
