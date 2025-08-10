@@ -2,6 +2,8 @@ name: Build Android APK (Flutter)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build-android:
@@ -23,31 +25,38 @@ jobs:
           flutter-version: '3.22.2'
           channel: stable
           cache: true
+
+      # Create missing Android scaffolding on the runner (safe package name!)
       - name: Create Android platform
         run: flutter create . --platforms=android --project-name ava_luxe
 
-
-      - name: Accept Android licenses
-        run: yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses
-
-      - name: Write google-services.json from secret
+      # If you use Firebase, write google-services.json from a repo secret
+      - name: Write google-services.json (if provided)
         env:
           FIREBASE_ANDROID_JSON: ${{ secrets.FIREBASE_ANDROID_JSON }}
         run: |
-          mkdir -p android/app
-          printf '%s' "$FIREBASE_ANDROID_JSON" > android/app/google-services.json
-          echo "google-services.json written to android/app/"
+          if [ -n "$FIREBASE_ANDROID_JSON" ]; then
+            mkdir -p android/app
+            printf '%s' "$FIREBASE_ANDROID_JSON" > android/app/google-services.json
+            echo "google-services.json written to android/app/"
+          else
+            echo "FIREBASE_ANDROID_JSON not set; skipping google-services.json"
+          fi
 
       - name: flutter pub get
         run: flutter pub get
 
+      - name: Accept Android licenses
+        run: yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses
+
+      # Build a single universal release APK.
+      # (If you prefer split-per-abi, replace the command with:
+      #   flutter build apk --release --split-per-abi
+      # and adjust the upload path.)
       - name: Build release APK
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          flutter build apk --release
-          # If you ever need the key at compile time:
-          # flutter build apk --release --dart-define=OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+        run: flutter build apk --release
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
