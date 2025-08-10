@@ -56,6 +56,8 @@ class _ChatScreenState extends State<ChatScreen> {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $apiKey',
+              'X-Title': 'Ava Luxe',                          // <-- add
+              'HTTP-Referer': 'https://openrouter.ai',        // <-- add (any valid URL/title works)
             },
             body: jsonEncode({
               "model": "openai/gpt-4o-mini",
